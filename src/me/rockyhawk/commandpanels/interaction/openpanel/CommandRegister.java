@@ -2,11 +2,9 @@ package me.rockyhawk.commandpanels.interaction.openpanel;
 
 import me.rockyhawk.commandpanels.Context;
 import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
-import org.bukkit.command.PluginCommand;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
+import org.bukkit.command.CommandSender;
 
 public class CommandRegister {
     private final Context ctx;
@@ -14,41 +12,31 @@ public class CommandRegister {
 
     public CommandRegister(Context ctx) {
         this.ctx = ctx;
-        this.commandMap = getCommandMap();
+        CommandMap map = null;
+        try {
+            map = Bukkit.getCommandMap();
+        } catch (Throwable ignored) {}
+        this.commandMap = map;
     }
 
     // Commands will register on panel load
     // Server will need reload for changes
     public void registerPanelCommand(String command) {
-        if (commandMap == null) return;
-        if (command.isEmpty()) return;
+        if (commandMap == null || command.isEmpty()) return;
 
-        // Check if already registered by Bukkit or this
+        // Check if already registered
         if (Bukkit.getPluginCommand(command) != null) return;
+        if (commandMap.getCommand(command) != null) return;
 
-        PluginCommand pluginCommand = createPluginCommand(command, ctx.plugin);
-        if (pluginCommand != null) {
-            commandMap.register(ctx.plugin.getDescription().getName(), pluginCommand);
-        }
-    }
+        Command customCmd = new Command(command) {
+            @Override
+            public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+                // Handled in PanelOpenCommand via PlayerCommandPreprocessEvent
+                return true;
+            }
+        };
+        customCmd.setDescription("CommandPanels custom panel command");
 
-    private CommandMap getCommandMap() {
-        try {
-            Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
-            commandMapField.setAccessible(true);
-            return (CommandMap) commandMapField.get(Bukkit.getServer());
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private PluginCommand createPluginCommand(String name, org.bukkit.plugin.Plugin plugin) {
-        try {
-            Constructor<PluginCommand> constructor = PluginCommand.class.getDeclaredConstructor(String.class, org.bukkit.plugin.Plugin.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(name, plugin);
-        } catch (Exception e) {
-            return null;
-        }
+        commandMap.register(ctx.plugin.getName(), customCmd);
     }
 }

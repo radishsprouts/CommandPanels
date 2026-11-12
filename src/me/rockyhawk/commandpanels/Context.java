@@ -11,6 +11,7 @@ import me.rockyhawk.commandpanels.session.inventory.generator.GenerateManager;
 import me.rockyhawk.commandpanels.session.inventory.listeners.ClickEvents;
 import me.rockyhawk.commandpanels.session.inventory.listeners.InventoryEvents;
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 
 public class Context {
     public CommandPanels plugin;
@@ -35,8 +36,12 @@ public class Context {
         customHeads = new CustomHeads(this);
 
         // Register plugin command
-        plugin.registerCommand("panels", new MainCommand(this));
-        plugin.registerCommand("pa", new MainCommand(this));
+        MainCommand mainCommand = new MainCommand(this);
+        PluginCommand panelsCmd = plugin.getCommand("panels");
+        if (panelsCmd != null) {
+            panelsCmd.setExecutor(mainCommand);
+            panelsCmd.setTabCompleter(mainCommand);
+        }
 
         // Register events
         Bukkit.getServer().getPluginManager().registerEvents(new InventoryEvents(this), plugin);
