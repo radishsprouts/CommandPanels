@@ -36,11 +36,21 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <minimizeJar>true</minimizeJar>
+                            <minimizeJar>false</minimizeJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.bstats:*</include>
+                                    <include>net.kyori:adventure-text-minimessage</include>
+                                </includes>
+                            </artifactSet>
                             <relocations>
                                 <relocation>
                                     <pattern>org.bstats</pattern>
                                     <shadedPattern>me.rockyhawk.commandpanels.libs.bstats</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>net.kyori.adventure.text.minimessage</pattern>
+                                    <shadedPattern>me.rockyhawk.commandpanels.libs.minimessage</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -204,6 +214,20 @@
             <artifactId>bstats-bukkit</artifactId>
             <version>3.2.1</version>
             <scope>compile</scope>
+        </dependency>
+
+        <!-- adventure-text-minimessage (shaded & relocated for 1.16 - 1.18 compatibility) -->
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-minimessage</artifactId>
+            <version>4.17.0</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.kyori</groupId>
+                    <artifactId>adventure-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
