@@ -11,11 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CommandPanels extends JavaPlugin {
     public File folder = new File(this.getDataFolder() + File.separator + "panels");
-    public HashMap<String, Panel> panels = new HashMap<>(); // String is for an index by panel name
+    public Map<String, Panel> panels = new ConcurrentHashMap<>(); // String is for an index by panel name
 
     public Context ctx;
 

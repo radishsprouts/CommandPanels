@@ -69,8 +69,7 @@ public class OpenCommand implements SubCommand {
         }
 
         // Run panel open on target thread
-        target.getScheduler().run(ctx.plugin, (task) ->
-                panel.open(ctx, target, true), null);
+        ctx.scheduler.runAtEntity(ctx.plugin, target, () -> panel.open(ctx, target, true));
         return true;
     }
 }

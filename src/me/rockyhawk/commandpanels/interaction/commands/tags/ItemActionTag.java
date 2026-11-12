@@ -1,7 +1,5 @@
 package me.rockyhawk.commandpanels.interaction.commands.tags;
 
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
 import me.rockyhawk.commandpanels.Context;
 import me.rockyhawk.commandpanels.formatter.language.Message;
 import me.rockyhawk.commandpanels.interaction.commands.CommandTagResolver;
@@ -106,7 +104,11 @@ public class ItemActionTag implements CommandTagResolver {
 
     private Enchantment registryEnchant(NamespacedKey key) {
         if (key != null) {
-            return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key);
+            Enchantment enchant = Enchantment.getByKey(key);
+            if (enchant == null) {
+                enchant = Enchantment.getByName(key.getKey().toUpperCase());
+            }
+            return enchant;
         }
         return null;
     }

@@ -3,7 +3,6 @@ package me.rockyhawk.commandpanels.interaction.commands;
 import me.rockyhawk.commandpanels.Context;
 import me.rockyhawk.commandpanels.api.Registry;
 import me.rockyhawk.commandpanels.session.Panel;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -37,11 +36,7 @@ public class CommandRunner {
             }
 
             int nextIndex = index + 1;
-            Bukkit.getGlobalRegionScheduler().runDelayed(
-                    ctx.plugin,
-                    task -> runCommands(panel, player, commands, nextIndex),
-                    ticks
-            );
+            ctx.scheduler.runAtEntityLater(ctx.plugin, player, () -> runCommands(panel, player, commands, nextIndex), ticks);
             return;
         }
 

@@ -13,7 +13,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.*;
 public class GenerateManager implements Listener {
 
     private final Context ctx;
-    private final Set<UUID> generatingPlayers = new HashSet<>();
+    private final Set<UUID> generatingPlayers = ConcurrentHashMap.newKeySet();
 
     private final List<ItemResolver> resolvers = List.of(
             new DisplayNameResolver(),
@@ -54,14 +54,11 @@ public class GenerateManager implements Listener {
         generatingPlayers.add(player.getUniqueId());
         ctx.text.sendInfo(player, Message.GENERATE_MODE_ENABLED);
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (generatingPlayers.remove(player.getUniqueId())) {
-                    ctx.text.sendInfo(player, Message.GENERATE_MODE_EXPIRED);
-                }
+        ctx.scheduler.runAtEntityLater(ctx.plugin, player, () -> {
+            if (generatingPlayers.remove(player.getUniqueId())) {
+                ctx.text.sendInfo(player, Message.GENERATE_MODE_EXPIRED);
             }
-        }.runTaskLater(ctx.plugin, 20L * 10);
+        }, 20L * 10);
     }
 
     public boolean isInGenerateMode(Player player) {

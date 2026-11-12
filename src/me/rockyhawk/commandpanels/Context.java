@@ -6,6 +6,8 @@ import me.rockyhawk.commandpanels.formatter.Placeholders;
 import me.rockyhawk.commandpanels.formatter.language.TextFormatter;
 import me.rockyhawk.commandpanels.formatter.data.DataLoader;
 import me.rockyhawk.commandpanels.interaction.openpanel.PanelOpenCommand;
+import me.rockyhawk.commandpanels.scheduler.SchedulerAdapter;
+import me.rockyhawk.commandpanels.scheduler.SchedulerFactory;
 import me.rockyhawk.commandpanels.session.SessionDataUtils;
 import me.rockyhawk.commandpanels.session.inventory.generator.GenerateManager;
 import me.rockyhawk.commandpanels.session.inventory.listeners.ClickEvents;
@@ -15,6 +17,7 @@ import org.bukkit.command.PluginCommand;
 
 public class Context {
     public CommandPanels plugin;
+    public SchedulerAdapter scheduler;
     public TextFormatter text;
     public FileHandler fileHandler;
     public PanelOpenCommand panelCommand;
@@ -28,6 +31,7 @@ public class Context {
     }
 
     private void init(){
+        scheduler = SchedulerFactory.create();
         text = new TextFormatter(this);
         fileHandler = new FileHandler(this);
         panelCommand = new PanelOpenCommand(this);
@@ -54,7 +58,7 @@ public class Context {
         Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "BungeeCord");
 
         // Register PlaceholderAPI (delayed by a tick by being in scheduler)
-        Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
+        scheduler.runGlobal(plugin, () -> {
             if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
                 new Placeholders(this).register();
             }

@@ -20,12 +20,11 @@ public class ReloadCommand implements SubCommand {
 
     @Override
     public boolean execute(Context ctx, CommandSender sender, String[] args) {
-        Bukkit.getAsyncScheduler().runNow(ctx.plugin, task -> {
+        ctx.scheduler.runAsync(ctx.plugin, () -> {
             ctx.fileHandler.updateConfigFiles();
             ctx.fileHandler.reloadPanels();
             ctx.text.lang.reloadTranslations();
-            Bukkit.getGlobalRegionScheduler().run(ctx.plugin, t ->
-                    ctx.text.sendInfo(sender, Message.PLUGIN_RELOADED));
+            ctx.scheduler.runGlobal(ctx.plugin, () -> ctx.text.sendInfo(sender, Message.PLUGIN_RELOADED));
         });
         return true;
     }

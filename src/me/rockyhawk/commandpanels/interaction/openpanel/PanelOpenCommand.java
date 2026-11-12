@@ -63,7 +63,7 @@ public class PanelOpenCommand implements Listener {
             }
 
             e.setCancelled(true);
-            e.getPlayer().getScheduler().run(ctx.plugin, task -> panel.open(ctx, e.getPlayer(), true), null);
+            ctx.scheduler.runAtEntity(ctx.plugin, e.getPlayer(), () -> panel.open(ctx, e.getPlayer(), true));
             return;
         }
 
