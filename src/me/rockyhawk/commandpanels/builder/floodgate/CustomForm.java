@@ -59,62 +59,55 @@ public class CustomForm {
                 }
 
                 // Create the component
-                switch (comp) {
-                    case FloodgateLabel input -> form.label(
+                if (comp instanceof FloodgateLabel input) {
+                    form.label(
                             parseText(
-                                    input.getName().replaceAll("\\\\n", "\n"))
+                                    input.getName().replaceAll("\\n", "\n"))
                     );
-                    case FloodgateInput input -> {
-                        form.input(
-                                parseText(input.getName()),
-                                parseText(input.getPlaceholder()),
-                                parseText(input.getDefault())
-                        );
-                        fields.add(FormField.of(input));
+                } else if (comp instanceof FloodgateInput input) {
+                    form.input(
+                            parseText(input.getName()),
+                            parseText(input.getPlaceholder()),
+                            parseText(input.getDefault())
+                    );
+                    fields.add(FormField.of(input));
+                } else if (comp instanceof FloodgateSlider slider) {
+                    form.slider(
+                            parseText(slider.getName()),
+                            parseFloat(slider.getMinimum()),
+                            parseFloat(slider.getMaximum()),
+                            parseInt(slider.getStep()),
+                            parseFloat(slider.getDefault())
+                    );
+                    fields.add(FormField.of(slider));
+                } else if (comp instanceof FloodgateDropdown dropdown) {
+                    List<String> parsedOptions = dropdown.getOptions().stream()
+                            .map(opt -> parseText(opt).trim())
+                            .filter(opt -> !opt.isEmpty())
+                            .toList();
+                    form.dropdown(
+                            parseText(dropdown.getName()),
+                            parsedOptions,
+                            parseInt(dropdown.getDefault())
+                    );
+                    fields.add(new FormField(dropdown, parsedOptions));
+                } else if (comp instanceof FloodgateToggle toggle) {
+                    form.toggle(
+                            parseText(toggle.getName()),
+                            parseBoolean(toggle.getDefault())
+                    );
+                    fields.add(FormField.of(toggle));
+                } else if (comp instanceof FloodgateStepSlider stepSlider) {
+                    List<String> parsedSteps = new ArrayList<>();
+                    for (String step : stepSlider.getSteps()) {
+                        parsedSteps.add(parseText(step));
                     }
-                    case FloodgateSlider slider -> {
-                        form.slider(
-                                parseText(slider.getName()),
-                                parseFloat(slider.getMinimum()),
-                                parseFloat(slider.getMaximum()),
-                                parseInt(slider.getStep()),
-                                parseFloat(slider.getDefault())
-                        );
-                        fields.add(FormField.of(slider));
-                    }
-                    case FloodgateDropdown dropdown -> {
-                        List<String> parsedOptions = dropdown.getOptions().stream()
-                                .map(opt -> parseText(opt).trim())
-                                .filter(opt -> !opt.isEmpty())
-                                .toList();
-                        form.dropdown(
-                                parseText(dropdown.getName()),
-                                parsedOptions,
-                                parseInt(dropdown.getDefault())
-                        );
-                        fields.add(new FormField(dropdown, parsedOptions));
-                    }
-                    case FloodgateToggle toggle -> {
-                        form.toggle(
-                                parseText(toggle.getName()),
-                                parseBoolean(toggle.getDefault())
-                        );
-                        fields.add(FormField.of(toggle));
-                    }
-                    case FloodgateStepSlider stepSlider -> {
-                        List<String> parsedSteps = new ArrayList<>();
-                        for (String step : stepSlider.getSteps()) {
-                            parsedSteps.add(parseText(step));
-                        }
-                        form.stepSlider(
-                                parseText(stepSlider.getName()),
-                                parsedSteps,
-                                parseInt(stepSlider.getDefault())
-                        );
-                        fields.add(new FormField(stepSlider, parsedSteps));
-                    }
-                    // unknown component, skip
-                    default -> {}
+                    form.stepSlider(
+                            parseText(stepSlider.getName()),
+                            parsedSteps,
+                            parseInt(stepSlider.getDefault())
+                    );
+                    fields.add(new FormField(stepSlider, parsedSteps));
                 }
 
                 // Only one component per order slot

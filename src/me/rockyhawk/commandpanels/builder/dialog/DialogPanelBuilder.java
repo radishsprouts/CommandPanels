@@ -101,7 +101,7 @@ public class DialogPanelBuilder extends PanelBuilder {
         final ActionButton exitAction;
         boolean hasExitButton = Boolean.parseBoolean(ctx.text.parseTextToString(player, panel.getExitButton()));
         if (!buttons.isEmpty() && hasExitButton) {
-            exitAction = buttons.removeLast();
+            exitAction = buttons.remove(buttons.size() - 1);
         } else {
             exitAction = null;
         }
