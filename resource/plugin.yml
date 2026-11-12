@@ -1,0 +1,23 @@
+name: CommandPanels
+version: ${project.version}
+api-version: '1.16'
+
+main: me.rockyhawk.commandpanels.CommandPanels
+description: Fully Custom Interactive GUIs with Animations and Logic.
+folia-supported: true
+
+commands:
+  panels:
+    description: Main command for CommandPanels
+    aliases: [pa]
+    permission: commandpanels.command
+
+softdepend:
+  - ItemsAdder
+  - Nexo
+  - HeadDatabase
+  - floodgate
+  - PlaceholderAPI
+  - MMOItems
+  - Vault
+  - CraftEngine
