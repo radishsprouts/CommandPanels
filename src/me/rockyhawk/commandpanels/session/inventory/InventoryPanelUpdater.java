@@ -23,6 +23,7 @@ public class InventoryPanelUpdater {
 
     private TaskHandle heartbeatTask;
     private TaskHandle baseTask;
+    private Context ctx;
 
     // The observer values
     private final Map<String, Boolean> lastObservedPermStates = new HashMap<>();
@@ -41,6 +42,7 @@ public class InventoryPanelUpdater {
 
     public void start(Context ctx, Player p, InventoryPanel panel) {
         stop(); // always clean slate
+        this.ctx = ctx;
 
         itemIdKey = new NamespacedKey(ctx.plugin, "item_id");
         baseIdKey = new NamespacedKey(ctx.plugin, "base_item_id");
@@ -60,8 +62,9 @@ public class InventoryPanelUpdater {
 
     // Check the panel instance is still open
     private boolean stillOpen(Player p, InventoryPanel panel) {
-        InventoryHolder holder = p.getOpenInventory().getTopInventory().getHolder();
-        return holder instanceof InventoryPanel && holder == panel;
+        if (ctx == null) return false;
+        var session = ctx.sessionManager.getSession(p);
+        return session != null && session.panel() == panel;
     }
 
     // permission and condition observer, runs fast since it is cheap to run
@@ -100,7 +103,11 @@ public class InventoryPanelUpdater {
     // The logic that actually changes items for base updater
     private void applyItem(Inventory inv, int slot, InventoryPanel panel, PanelItem panelItem, String baseItemId) {
         ItemStack newItem = itemBuilder.buildItem(panel, panelItem);
-        newItem.editPersistentDataContainer(c -> c.set(baseIdKey, PersistentDataType.STRING, baseItemId));
+        ItemMeta meta = newItem.getItemMeta();
+        if (meta != null) {
+            meta.getPersistentDataContainer().set(baseIdKey, PersistentDataType.STRING, baseItemId);
+            newItem.setItemMeta(meta);
+        }
         inv.setItem(slot, newItem);
     }
 
@@ -140,7 +147,9 @@ public class InventoryPanelUpdater {
         baseTask = ctx.scheduler.runAtEntityTimer(ctx.plugin, p, () -> {
             if (!stillOpen(p, panel)) { stopBase(); return; }
 
-            Inventory inv = p.getOpenInventory().getTopInventory();
+            var session = ctx.sessionManager.getSession(p);
+            if (session == null || session.inventory() == null) { stopBase(); return; }
+            Inventory inv = session.inventory();
 
             forEachManagedItem(inv, panel, (slot, itemId, baseItemId, panelItem) -> {
                 PanelItem toApply = null;

@@ -32,7 +32,9 @@ public class ItemActionTag implements CommandTagResolver {
             int slot = Integer.parseInt(args[1]);
             String action = args[0].toLowerCase();
 
-            Inventory gui = player.getOpenInventory().getTopInventory();
+            var session = ctx.sessionManager.getSession(player);
+            Inventory gui = (session != null) ? session.inventory() : null;
+            if (gui == null) return;
             ItemStack item = gui.getItem(slot);
 
             if (item == null || item.getType() == Material.AIR || !(panel instanceof InventoryPanel)) {

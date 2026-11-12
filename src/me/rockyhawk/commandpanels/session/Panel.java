@@ -84,8 +84,11 @@ public abstract class Panel {
         }
 
         // Do not allow the same panel to be opened again if already open
-        return !(p.getOpenInventory().getTopInventory().getHolder() instanceof InventoryPanel panel)
-                || !panel.getName().equals(getName());
+        PanelSessionManager.ActiveSession session = ctx.sessionManager.getSession(p);
+        if (session != null && session.panel() instanceof InventoryPanel panel) {
+            return !panel.getName().equals(getName());
+        }
+        return true;
     }
 
     // Updates data to set the current panel and previous panel.

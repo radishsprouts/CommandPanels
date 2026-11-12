@@ -22,6 +22,7 @@ public class InventoryPanelBuilder extends PanelBuilder {
             throw new IllegalArgumentException("Expected InventoryPanel, got " + panel.getClass());
         }
         Inventory panelInv = panelFactory.createInventory((InventoryPanel) panel, this.getPlayer());
+        ctx.sessionManager.openSession(this.getPlayer(), panel, panelInv);
         this.getPlayer().openInventory(panelInv);
     }
 }

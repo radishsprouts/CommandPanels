@@ -96,9 +96,11 @@ public class ItemTag implements RequirementTagResolver {
         // If zero items are required, always pass
         if (req.amount <= 0) return true;
 
+        var session = ctx.sessionManager.getSession(player);
         Inventory inv = req.source.equals("panel")
-                ? player.getOpenInventory().getTopInventory()
+                ? (session != null ? session.inventory() : null)
                 : player.getInventory();
+        if (inv == null) return false;
 
         NamespacedKey itemId = new NamespacedKey(ctx.plugin, "item_id");
         int count = 0;
@@ -123,9 +125,11 @@ public class ItemTag implements RequirementTagResolver {
     }
 
     private void removeMatchingItems(Context ctx, Player player, ParsedItemRequirement req) {
+        var session = ctx.sessionManager.getSession(player);
         Inventory inv = req.source.equals("panel")
-                ? player.getOpenInventory().getTopInventory()
+                ? (session != null ? session.inventory() : null)
                 : player.getInventory();
+        if (inv == null) return;
 
         NamespacedKey itemId = new NamespacedKey(ctx.plugin, "item_id");
         int toRemove = req.amount;

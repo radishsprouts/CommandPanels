@@ -44,8 +44,9 @@ public class ClickEvents implements Listener {
     public void onPlayerInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
         if (e.getClickedInventory() == null) return;
-        if (!(player.getOpenInventory().getTopInventory().getHolder() instanceof InventoryPanel panel)) return;
-        if (e.getClickedInventory() != e.getView().getBottomInventory()) return;
+        var session = ctx.sessionManager.getSession(player);
+        if (session == null || !(session.panel() instanceof InventoryPanel panel)) return;
+        if (e.getClickedInventory() != player.getInventory()) return;
 
         // Cancel player inventory click if locked
         boolean isLocked = Boolean.parseBoolean(
@@ -57,7 +58,8 @@ public class ClickEvents implements Listener {
     public void onOutsideInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
         if (e.getClickedInventory() != null) return;
-        if (!(player.getOpenInventory().getTopInventory().getHolder() instanceof InventoryPanel panel)) return;
+        var session = ctx.sessionManager.getSession(player);
+        if (session == null || !(session.panel() instanceof InventoryPanel panel)) return;
 
         // Run outside command actions
         CommandActions actions = panel.getOutsideCommands();
@@ -118,8 +120,11 @@ public class ClickEvents implements Listener {
 
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        Inventory topInventory = event.getView().getTopInventory();
-        if(!(topInventory.getHolder() instanceof InventoryPanel)) return;
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        var session = ctx.sessionManager.getSession(player);
+        if (session == null || !(session.panel() instanceof InventoryPanel)) return;
+        Inventory topInventory = session.inventory();
+        if (topInventory == null) return;
 
         // Only care about drag targets in the top inventory
         int topSize = topInventory.getSize();

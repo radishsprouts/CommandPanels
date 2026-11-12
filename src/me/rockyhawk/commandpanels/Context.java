@@ -8,6 +8,7 @@ import me.rockyhawk.commandpanels.formatter.data.DataLoader;
 import me.rockyhawk.commandpanels.interaction.openpanel.PanelOpenCommand;
 import me.rockyhawk.commandpanels.scheduler.SchedulerAdapter;
 import me.rockyhawk.commandpanels.scheduler.SchedulerFactory;
+import me.rockyhawk.commandpanels.session.PanelSessionManager;
 import me.rockyhawk.commandpanels.session.SessionDataUtils;
 import me.rockyhawk.commandpanels.session.inventory.generator.GenerateManager;
 import me.rockyhawk.commandpanels.session.inventory.listeners.ClickEvents;
@@ -24,6 +25,7 @@ public class Context {
     public DataLoader dataLoader;
     public GenerateManager generator;
     public CustomHeads customHeads;
+    public PanelSessionManager sessionManager;
 
     public Context(CommandPanels pl) {
         plugin = pl;
@@ -32,6 +34,7 @@ public class Context {
 
     private void init(){
         scheduler = SchedulerFactory.create();
+        sessionManager = new PanelSessionManager();
         text = new TextFormatter(this);
         fileHandler = new FileHandler(this);
         panelCommand = new PanelOpenCommand(this);

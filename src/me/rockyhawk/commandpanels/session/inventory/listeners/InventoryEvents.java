@@ -15,6 +15,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -45,11 +46,15 @@ public class InventoryEvents implements Listener {
                 itemSanitiser(player.getInventory());
                 itemDropper(player, event.getInventory());
 
-                // Panel was just refreshed, not closed
-                if(player.getOpenInventory().getTopInventory().getHolder() instanceof InventoryPanel currentPanel
-                        && currentPanel == panel){
+                // Check if panel was refreshed to another or same panel
+                var session = ctx.sessionManager.getSession(player);
+                if (session != null && session.panel() == panel && session.inventory() != event.getInventory()) {
+                    // Refreshed! Keep session and do not run close commands
                     return;
                 }
+
+                // If not refreshed (or closed completely)
+                ctx.sessionManager.closeSession(player);
 
                 // Run close commands
                 RequirementRunner requirements = new RequirementRunner(ctx);
@@ -80,11 +85,10 @@ public class InventoryEvents implements Listener {
         closePanels(event.getPlayer());
     }
 
-    private void closePanels(Player p){
-        if (p.getOpenInventory() != null) { // Player has an open inventory
-            if (p.getOpenInventory().getTopInventory().getHolder() instanceof InventoryPanel) {
-                p.closeInventory();
-            }
+    private void closePanels(Player p) {
+        if (ctx.sessionManager.hasSession(p)) {
+            p.closeInventory();
+            ctx.sessionManager.closeSession(p);
         }
     }
 
@@ -97,7 +101,10 @@ public class InventoryEvents implements Listener {
         for (ItemStack item : inv.getContents()) {
             if (item == null) continue;
 
-            String itemName = item.getPersistentDataContainer().get(key, PersistentDataType.STRING);
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) continue;
+
+            String itemName = meta.getPersistentDataContainer().get(key, PersistentDataType.STRING);
             if (itemName != null) {
                 toRemove.add(item);
             }
@@ -112,10 +119,13 @@ public class InventoryEvents implements Listener {
     private void itemDropper(Player player, Inventory inventory) {
         NamespacedKey key = new NamespacedKey(ctx.plugin, "item_id");
         PlayerInventory playerInv = player.getInventory();
-        Inventory newTop = player.getOpenInventory().getTopInventory();
+        var session = ctx.sessionManager.getSession(player);
+        Inventory newTop = (session != null) ? session.inventory() : null;
 
         // If it's a refresh, items are returned to the panel not the player
-        boolean isRefreshOfSamePanel = inventory.getHolder() instanceof InventoryPanel oldPanel
+        boolean isRefreshOfSamePanel = newTop != null
+                && newTop != inventory
+                && inventory.getHolder() instanceof InventoryPanel oldPanel
                 && newTop.getHolder() instanceof InventoryPanel newPanel
                 && oldPanel == newPanel;
 
@@ -123,12 +133,14 @@ public class InventoryEvents implements Listener {
             ItemStack item = inventory.getItem(i);
             if (item == null || item.getType().isAir()) continue;
 
-            boolean isPanelItem = item.getPersistentDataContainer().has(key, PersistentDataType.STRING);
+            ItemMeta meta = item.getItemMeta();
+            boolean isPanelItem = meta != null && meta.getPersistentDataContainer().has(key, PersistentDataType.STRING);
             if (isPanelItem) continue;
 
             if (isRefreshOfSamePanel) {
                 ItemStack newSlotItem = newTop.getItem(i);
-                boolean slotIsClaimedByPanel = newSlotItem != null && newSlotItem.getPersistentDataContainer().has(key, PersistentDataType.STRING);
+                ItemMeta newSlotMeta = newSlotItem != null ? newSlotItem.getItemMeta() : null;
+                boolean slotIsClaimedByPanel = newSlotMeta != null && newSlotMeta.getPersistentDataContainer().has(key, PersistentDataType.STRING);
 
                 if (!slotIsClaimedByPanel) {
                     newTop.setItem(i, item);
