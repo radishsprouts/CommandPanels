@@ -16,35 +16,37 @@ public class DataManager implements Listener {
     //RESOLVED profiles have a UUID and Player Name linked
     //UNRESOLVED profiles had data assigned before they were online to find a UUID
     public String getDataProfile(String playerName) {
-        Player player = Bukkit.getPlayer(playerName);
+        synchronized (loader.getDataLock()) {
+            Player player = Bukkit.getPlayer(playerName);
 
-        // If the player has an unresolved profile
-        boolean hasUnresolvedProfile = containsNoCase(loader.dataConfig, playerName);
+            // If the player has an unresolved profile
+            boolean hasUnresolvedProfile = containsNoCase(loader.dataConfig, playerName);
 
-        if (player != null) {
-            // Run if player is currently online
-            loader.dataConfig.set("player_data.resolved_profiles." + player.getUniqueId() + ".last_known_name", player.getName());
+            if (player != null) {
+                // Run if player is currently online
+                loader.dataConfig.set("player_data.resolved_profiles." + player.getUniqueId() + ".last_known_name", player.getName());
 
-            if (hasUnresolvedProfile) {
-                mergeProfiles(player);
-            }
+                if (hasUnresolvedProfile) {
+                    mergeProfiles(player);
+                }
 
-            return "player_data.resolved_profiles." + player.getUniqueId();
-        } else {
-            // Try to find a resolved profile by matching last_known_name (case-insensitive)
-            ConfigurationSection resolved = loader.dataConfig.getConfigurationSection("player_data.resolved_profiles");
-            if (resolved != null) {
-                for (String uuidKey : resolved.getKeys(false)) {
-                    String path = "player_data.resolved_profiles." + uuidKey + ".last_known_name";
-                    String lastKnownName = loader.dataConfig.getString(path);
-                    if (lastKnownName != null && lastKnownName.equalsIgnoreCase(playerName)) {
-                        return "player_data.resolved_profiles." + uuidKey;
+                return "player_data.resolved_profiles." + player.getUniqueId();
+            } else {
+                // Try to find a resolved profile by matching last_known_name (case-insensitive)
+                ConfigurationSection resolved = loader.dataConfig.getConfigurationSection("player_data.resolved_profiles");
+                if (resolved != null) {
+                    for (String uuidKey : resolved.getKeys(false)) {
+                        String path = "player_data.resolved_profiles." + uuidKey + ".last_known_name";
+                        String lastKnownName = loader.dataConfig.getString(path);
+                        if (lastKnownName != null && lastKnownName.equalsIgnoreCase(playerName)) {
+                            return "player_data.resolved_profiles." + uuidKey;
+                        }
                     }
                 }
-            }
 
-            // Fallback to unresolved profile path (creation of section is not necessary until data is written)
-            return "player_data.unresolved_profiles." + playerName;
+                // Fallback to unresolved profile path (creation of section is not necessary until data is written)
+                return "player_data.unresolved_profiles." + playerName;
+            }
         }
     }
 
@@ -55,28 +57,30 @@ public class DataManager implements Listener {
 
     // Will get all player names that have data entries
     public List<String> getPlayerNames() {
-        List<String> players = new ArrayList<>();
+        synchronized (loader.getDataLock()) {
+            List<String> players = new ArrayList<>();
 
-        ConfigurationSection unresolved = loader.dataConfig.getConfigurationSection("player_data.unresolved_profiles");
-        ConfigurationSection resolved = loader.dataConfig.getConfigurationSection("player_data.resolved_profiles");
+            ConfigurationSection unresolved = loader.dataConfig.getConfigurationSection("player_data.unresolved_profiles");
+            ConfigurationSection resolved = loader.dataConfig.getConfigurationSection("player_data.resolved_profiles");
 
-        // Collect all unresolved profile names (keys)
-        if (unresolved != null) {
-            players.addAll(unresolved.getKeys(false));
-        }
+            // Collect all unresolved profile names (keys)
+            if (unresolved != null) {
+                players.addAll(unresolved.getKeys(false));
+            }
 
-        // Collect all resolved profile names from the last_known_name field
-        if (resolved != null) {
-            for (String uuidKey : resolved.getKeys(false)) {
-                String path = "player_data.resolved_profiles." + uuidKey + ".last_known_name";
-                String lastKnownName = loader.dataConfig.getString(path);
-                if (lastKnownName != null && !lastKnownName.isEmpty()) {
-                    players.add(lastKnownName);
+            // Collect all resolved profile names from the last_known_name field
+            if (resolved != null) {
+                for (String uuidKey : resolved.getKeys(false)) {
+                    String path = "player_data.resolved_profiles." + uuidKey + ".last_known_name";
+                    String lastKnownName = loader.dataConfig.getString(path);
+                    if (lastKnownName != null && !lastKnownName.isEmpty()) {
+                        players.add(lastKnownName);
+                    }
                 }
             }
-        }
 
-        return players;
+            return players;
+        }
     }
 
     //Same as contains but is not case-sensitive since Minecraft usernames are not case-sensitive
