@@ -1,7 +1,7 @@
 package me.rockyhawk.commandpanels.session.inventory;
 
-import io.papermc.paper.persistence.PersistentDataContainerView;
-import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import me.rockyhawk.commandpanels.scheduler.TaskHandle;
+import org.bukkit.persistence.PersistentDataContainer;
 import me.rockyhawk.commandpanels.Context;
 import me.rockyhawk.commandpanels.builder.inventory.InventoryPanelBuilder;
 import me.rockyhawk.commandpanels.builder.inventory.items.ItemBuilder;
@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
@@ -20,8 +21,8 @@ import java.util.function.Function;
 
 public class InventoryPanelUpdater {
 
-    private ScheduledTask heartbeatTask;
-    private ScheduledTask baseTask;
+    private TaskHandle heartbeatTask;
+    private TaskHandle baseTask;
 
     // The observer values
     private final Map<String, Boolean> lastObservedPermStates = new HashMap<>();
@@ -65,7 +66,7 @@ public class InventoryPanelUpdater {
 
     // permission and condition observer, runs fast since it is cheap to run
     private void startHeartbeat(Context ctx, Player p, InventoryPanel panel) {
-        heartbeatTask = p.getScheduler().runAtFixedRate(ctx.plugin, (task) -> {
+        heartbeatTask = ctx.scheduler.runAtEntityTimer(ctx.plugin, p, () -> {
             boolean refresh = false;
 
             if (ctx.fileHandler.config.getBoolean("permission-observer")) {
@@ -83,7 +84,7 @@ public class InventoryPanelUpdater {
 
             if (!stillOpen(p, panel)) { stop(); return; }
             if (refresh) panel.open(ctx, p, false);
-        }, null, 2, 2);
+        }, 2, 2);
     }
 
     // For checking if observed placeholders have changed or not
@@ -116,7 +117,9 @@ public class InventoryPanelUpdater {
             ItemStack item = inv.getItem(slot);
             if (item == null || item.getType().isAir()) continue;
 
-            PersistentDataContainerView container = item.getPersistentDataContainer();
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) continue;
+            PersistentDataContainer container = meta.getPersistentDataContainer();
             if (!container.has(itemIdKey, PersistentDataType.STRING) ||
                     container.has(fillItemKey, PersistentDataType.STRING)) continue;
 
@@ -134,7 +137,7 @@ public class InventoryPanelUpdater {
 
     // the general updater for placeholder changes which also handles animations
     private void startBase(Context ctx, Player p, InventoryPanel panel, int updateInterval) {
-        baseTask = p.getScheduler().runAtFixedRate(ctx.plugin, (task) -> {
+        baseTask = ctx.scheduler.runAtEntityTimer(ctx.plugin, p, () -> {
             if (!stillOpen(p, panel)) { stopBase(); return; }
 
             Inventory inv = p.getOpenInventory().getTopInventory();
@@ -159,7 +162,7 @@ public class InventoryPanelUpdater {
 
                 if(toApply != null) applyItem(inv, slot, panel, toApply, baseItemId);
             });
-        }, null, updateInterval, updateInterval);
+        }, updateInterval, updateInterval);
     }
 
     public void stop() {

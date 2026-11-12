@@ -1,6 +1,5 @@
 package me.rockyhawk.commandpanels.interaction.commands.requirements;
 
-import io.papermc.paper.datacomponent.DataComponentTypes;
 import me.rockyhawk.commandpanels.Context;
 import me.rockyhawk.commandpanels.formatter.language.Message;
 import me.rockyhawk.commandpanels.interaction.commands.RequirementTagResolver;
@@ -36,7 +35,7 @@ public class ItemTag implements RequirementTagResolver {
     public void execute(Context ctx, Panel panel, Player player, String raw, String args) {
         ParsedItemRequirement req = parseArgs(ctx, player, args);
         if (req == null) return;
-        if(req.remove) removeMatchingItems(ctx, player, req);
+        if (req.remove) removeMatchingItems(ctx, player, req);
     }
 
     private ParsedItemRequirement parseArgs(Context ctx, Player player, String args) {
@@ -46,7 +45,6 @@ public class ItemTag implements RequirementTagResolver {
         int amount = 1;
         boolean remove = true;
         String custom = null;
-        NamespacedKey model = null;
         String source = "player"; // default to player
 
         if (map.containsKey("material")) {
@@ -74,15 +72,6 @@ public class ItemTag implements RequirementTagResolver {
             }
         }
 
-        if (map.containsKey("model")) {
-            String raw = map.get("model");
-            model = NamespacedKey.fromString(raw);
-            if (model == null) {
-                ctx.text.sendError(player, Message.ITEM_MODEL_INVALID);
-                return null;
-            }
-        }
-
         if (map.containsKey("custom")) {
             custom = map.get("custom");
             if (custom.isEmpty()) {
@@ -100,7 +89,7 @@ public class ItemTag implements RequirementTagResolver {
             source = s;
         }
 
-        return new ParsedItemRequirement(material, amount, model, custom, source, remove);
+        return new ParsedItemRequirement(material, amount, custom, source, remove);
     }
 
     private boolean hasMatchingItems(Context ctx, Player player, ParsedItemRequirement req) {
@@ -124,27 +113,7 @@ public class ItemTag implements RequirementTagResolver {
             // Skip items that have item_id (panel-defined items)
             if (meta.getPersistentDataContainer().has(itemId, PersistentDataType.STRING)) continue;
 
-            // If a specific model is required, only match items with that exact model.
-            // If no model is specified, skip items that have any item model data.
-            if (req.model != null) {
-                if (!meta.hasItemModel() || !req.model.equals(meta.getItemModel())) continue;
-            } else {
-                if (meta.hasItemModel()) continue;
-            }
-
-            // If a specific Custom Model Data is required, only match items with that exact data.
-            // If no custom model data is specified, skip items that have any data.
-            if (req.custom != null) {
-                if (item.getData(DataComponentTypes.CUSTOM_MODEL_DATA) == null) continue;
-                try{
-                    float num = Float.parseFloat(req.custom);
-                    if(!item.getData(DataComponentTypes.CUSTOM_MODEL_DATA).floats().contains(num)) continue;
-                }catch (NumberFormatException e){
-                    if(!item.getData(DataComponentTypes.CUSTOM_MODEL_DATA).strings().contains(req.custom)) continue;
-                }
-            } else {
-                if (item.getData(DataComponentTypes.CUSTOM_MODEL_DATA) != null) continue;
-            }
+            if (!matchesCustomModelData(meta, req.custom)) continue;
 
             count += item.getAmount();
             if (count >= req.amount) return true;
@@ -171,27 +140,7 @@ public class ItemTag implements RequirementTagResolver {
             // Skip items that have item_id (panel-defined items)
             if (meta.getPersistentDataContainer().has(itemId, PersistentDataType.STRING)) continue;
 
-            // If a specific Item Model is required, only match items with that exact model.
-            // If no model is specified, skip items that have any item model data.
-            if (req.model != null) {
-                if (!meta.hasItemModel() || !req.model.equals(meta.getItemModel())) continue;
-            } else {
-                if (meta.hasItemModel()) continue;
-            }
-
-            // If a specific Custom Model Data is required, only match items with that exact data.
-            // If no custom model data is specified, skip items that have any data.
-            if (req.custom != null) {
-                if (item.getData(DataComponentTypes.CUSTOM_MODEL_DATA) == null) continue;
-                try{
-                    float num = Float.parseFloat(req.custom);
-                    if(!item.getData(DataComponentTypes.CUSTOM_MODEL_DATA).floats().contains(num)) continue;
-                }catch (NumberFormatException e){
-                    if(!item.getData(DataComponentTypes.CUSTOM_MODEL_DATA).strings().contains(req.custom)) continue;
-                }
-            } else {
-                if (item.getData(DataComponentTypes.CUSTOM_MODEL_DATA) != null) continue;
-            }
+            if (!matchesCustomModelData(meta, req.custom)) continue;
 
             int stackAmount = item.getAmount();
             if (stackAmount <= toRemove) {
@@ -222,17 +171,30 @@ public class ItemTag implements RequirementTagResolver {
         Material material;
         int amount;
         boolean remove;
-        NamespacedKey model;
         String custom;
         String source;
 
-        ParsedItemRequirement(Material material, int amount, NamespacedKey model, String custom, String source, boolean remove) {
+        ParsedItemRequirement(Material material, int amount, String custom, String source, boolean remove) {
             this.material = material;
             this.amount = amount;
             this.remove = remove;
-            this.model = model;
             this.custom = custom;
             this.source = source;
+        }
+    }
+
+    private static boolean matchesCustomModelData(ItemMeta meta, String expectedCustom) {
+        boolean hasCmd = meta.hasCustomModelData();
+        if (expectedCustom != null) {
+            if (!hasCmd) return false;
+            try {
+                int expectedNum = (int) Float.parseFloat(expectedCustom);
+                return meta.getCustomModelData() == expectedNum;
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        } else {
+            return !hasCmd;
         }
     }
 }

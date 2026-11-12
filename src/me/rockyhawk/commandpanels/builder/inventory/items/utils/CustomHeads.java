@@ -1,11 +1,14 @@
 package me.rockyhawk.commandpanels.builder.inventory.items.utils;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import me.rockyhawk.commandpanels.Context;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
+
+import java.util.UUID;
 
 public class CustomHeads {
 
@@ -16,19 +19,27 @@ public class CustomHeads {
     }
 
     public ItemStack getCustomHead(String base64Texture) {
-        ItemStack skull = ItemStack.of(Material.PLAYER_HEAD);
+        ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
         if (base64Texture == null || base64Texture.isBlank()) return skull;
-        skull.setData(DataComponentTypes.PROFILE, ResolvableProfile.resolvableProfile()
-                .addProperty(new ProfileProperty("textures", base64Texture))
-                .build());
+
+        if (skull.getItemMeta() instanceof SkullMeta skullMeta) {
+            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID(), "");
+            profile.setProperty(new ProfileProperty("textures", base64Texture));
+            skullMeta.setPlayerProfile(profile);
+            skull.setItemMeta(skullMeta);
+        }
         return skull;
     }
 
     public ItemStack getPlayerHeadSync(String playerName) {
-        ItemStack skull = ItemStack.of(Material.PLAYER_HEAD);
+        ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
         if (playerName == null || !playerName.matches("^[!-~]{1,16}$")) return skull;
-        skull.setData(DataComponentTypes.PROFILE,
-                ResolvableProfile.resolvableProfile().name(playerName).build());
+
+        if (skull.getItemMeta() instanceof SkullMeta skullMeta) {
+            PlayerProfile profile = Bukkit.createProfile(playerName);
+            skullMeta.setPlayerProfile(profile);
+            skull.setItemMeta(skullMeta);
+        }
         return skull;
     }
 }

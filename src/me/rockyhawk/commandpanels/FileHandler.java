@@ -45,7 +45,7 @@ public class FileHandler {
         // Create panels folder and add example panels if not there
         if (!ctx.plugin.folder.exists()) {
             if (!ctx.plugin.folder.mkdirs()) {
-                Bukkit.getGlobalRegionScheduler().run(ctx.plugin, task ->
+                ctx.scheduler.runGlobal(ctx.plugin, () ->
                         ctx.text.sendError(ctx.plugin.getServer().getConsoleSender(), Message.FILE_CREATE_PANELS_FAIL));
                 return;
             }
@@ -55,7 +55,7 @@ public class FileHandler {
         // Load panels
         HashMap<String, Panel> panels = new HashMap<>();
         loadYamlFilesRecursively(ctx.plugin.folder, panels);
-        Bukkit.getGlobalRegionScheduler().run(ctx.plugin, task -> {
+        ctx.scheduler.runGlobal(ctx.plugin, () -> {
             ctx.plugin.panels.clear();
             ctx.plugin.panels.putAll(panels);
             ctx.panelCommand.populateCommands();
@@ -85,6 +85,10 @@ public class FileHandler {
                 }
 
                 String panelType = config.getString("type", "inventory").toLowerCase();
+                if ("dialog".equals(panelType) && !hasDialogApi()) {
+                    Bukkit.getLogger().warning("[CommandPanels] Panel '" + panelName + "' requires Minecraft 1.21.2+ (Paper Dialog API). Skipping this panel.");
+                    continue;
+                }
                 Panel panel = switch (panelType) {
                     case "dialog" -> new DialogPanel(panelName, config);
                     case "floodgate" -> new FloodgatePanel(panelName, config);
@@ -138,7 +142,7 @@ public class FileHandler {
             FileConfiguration floodgateCustomFile = YamlConfiguration.loadConfiguration(getReaderFromStream(ctx.plugin.getResource("floodgate_custom.yml")));
             floodgateCustomFile.save(new File(ctx.plugin.folder, "floodgate_custom.yml"));
         } catch (IOException | NullPointerException e) {
-            Bukkit.getGlobalRegionScheduler().run(ctx.plugin, task ->
+            ctx.scheduler.runGlobal(ctx.plugin, () ->
                     ctx.text.sendError(ctx.plugin.getServer().getConsoleSender(), Message.FILE_CREATE_EXAMPLE_FAIL));
         }
     }
@@ -152,7 +156,7 @@ public class FileHandler {
         try {
             messagesYaml.save(messagesFile);
         } catch (IOException ex) {
-            Bukkit.getGlobalRegionScheduler().run(ctx.plugin, task ->
+            ctx.scheduler.runGlobal(ctx.plugin, () ->
                     ctx.text.sendError(ctx.plugin.getServer().getConsoleSender(), Message.FILE_CREATE_LANG_FAIL));
         }
     }
@@ -170,7 +174,7 @@ public class FileHandler {
                 configFileConfiguration.save(configFile);
                 config = YamlConfiguration.loadConfiguration(new File(ctx.plugin.getDataFolder(), "config.yml"));
             } catch (IOException var11) {
-                Bukkit.getGlobalRegionScheduler().run(ctx.plugin, task ->
+                ctx.scheduler.runGlobal(ctx.plugin, () ->
                         ctx.text.sendError(ctx.plugin.getServer().getConsoleSender(), Message.FILE_CREATE_CONFIG_FAIL));
             }
         } else {
@@ -181,9 +185,13 @@ public class FileHandler {
                 config.options().copyDefaults(true);
                 config.save(new File(ctx.plugin.getDataFolder() + File.separator + "config.yml"));
             } catch (IOException var10) {
-                Bukkit.getGlobalRegionScheduler().run(ctx.plugin, task ->
+                ctx.scheduler.runGlobal(ctx.plugin, () ->
                         ctx.text.sendError(ctx.plugin.getServer().getConsoleSender(), Message.FILE_UPDATE_CONFIG_FAIL));
             }
         }
+    }
+
+    private static boolean hasDialogApi() {
+        return me.rockyhawk.commandpanels.util.ServerVersion.isAtLeast(1, 21, 2);
     }
 }

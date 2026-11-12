@@ -1,6 +1,5 @@
 package me.rockyhawk.commandpanels.session.inventory.listeners;
 
-import io.papermc.paper.persistence.PersistentDataContainerView;
 import me.rockyhawk.commandpanels.Context;
 import me.rockyhawk.commandpanels.interaction.commands.CommandRunner;
 import me.rockyhawk.commandpanels.interaction.commands.RequirementRunner;
@@ -79,7 +78,9 @@ public class ClickEvents implements Listener {
         if (item == null) return;
 
         // Check if item has commandpanels data attached
-        PersistentDataContainerView container = item.getPersistentDataContainer();
+        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        PersistentDataContainer container = meta.getPersistentDataContainer();
 
         String itemId = container.getOrDefault(baseIdKey, PersistentDataType.STRING, null);
         if (itemId == null) return;
@@ -127,7 +128,9 @@ public class ClickEvents implements Listener {
                 .anyMatch(slot -> {
                     var item = topInventory.getItem(slot);
                     if (item == null) return false;
-                    var cont = item.getPersistentDataContainer();
+                    var itemMeta = item.getItemMeta();
+                    if (itemMeta == null) return false;
+                    var cont = itemMeta.getPersistentDataContainer();
                     return cont.has(itemIdKey, PersistentDataType.STRING);
                 });
 
