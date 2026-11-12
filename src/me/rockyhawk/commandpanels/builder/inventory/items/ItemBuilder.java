@@ -12,6 +12,8 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,8 +45,13 @@ public class ItemBuilder {
         // Use PersistentDataContainer for item recognition
         NamespacedKey itemId = new NamespacedKey(ctx.plugin, "item_id");
         NamespacedKey baseItemId = new NamespacedKey(ctx.plugin, "base_item_id");
-        itemStack.editPersistentDataContainer(c -> c.set(itemId, PersistentDataType.STRING, item.id()));
-        itemStack.editPersistentDataContainer(c -> c.set(baseItemId, PersistentDataType.STRING, item.id()));
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta != null) {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            container.set(itemId, PersistentDataType.STRING, item.id());
+            container.set(baseItemId, PersistentDataType.STRING, item.id());
+            itemStack.setItemMeta(meta);
+        }
 
         // Set item to the slot
         return itemStack;

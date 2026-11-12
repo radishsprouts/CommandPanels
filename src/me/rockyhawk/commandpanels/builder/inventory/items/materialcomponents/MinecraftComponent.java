@@ -3,6 +3,7 @@ package me.rockyhawk.commandpanels.builder.inventory.items.materialcomponents;
 import me.rockyhawk.commandpanels.Context;
 import me.rockyhawk.commandpanels.builder.inventory.items.MaterialComponent;
 import me.rockyhawk.commandpanels.session.inventory.PanelItem;
+import me.rockyhawk.commandpanels.util.ServerVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -31,9 +32,11 @@ public class MinecraftComponent implements MaterialComponent {
         ItemStack stack = new ItemStack(material);
 
         // If the material contains components, add them to the item
-        if (components != null) {
-            // Returns original stack if malformed
-            stack = Bukkit.getUnsafe().modifyItemStack(stack, components);
+        if (components != null && ServerVersion.isAtLeast(1, 20, 5)) {
+            try {
+                // Returns original stack if malformed
+                stack = Bukkit.getUnsafe().modifyItemStack(stack, components);
+            } catch (Throwable ignored) {}
         }
 
         return stack;
